@@ -1,0 +1,16 @@
+# 全ファイル禁止
+*
+!*/
+
+#特定ファイルの許可
+!/src/**
+!/.gitignore
+!/README.md
+!/package.json
+!/package-lock.json
+!/.env.example
+
+#無視
+/.env
+/node_modules
+src/.env
