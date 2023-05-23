@@ -1,48 +1,42 @@
 import { Configuration, OpenAIApi } from "openai";
 import dotenv from 'dotenv';
+import struct from './data-struct.js'
 
 export let rooms = [];
 
-function cardData(name,cg,flavortext,attack,defence) {
-    this.name = name;
-    this.cg = cg;
-    this.flavortext = flavortext;
-    this.attack = attack;
-    this.defence = defence;
+export default function createRoom(player1ID, player2ID) {
+    let player1 = new struct.playerData(player1ID, 0, 0, 0);
+    let player2 = new struct.playerData(player2ID, 0, 0, 0);
+    let field = new struct.fieldData(0, 0);
+    rooms.push(new struct.RoomData(player1, player2, field));
 }
 
-function playerData(id, deck, hand, win) {
-    this.id = id;
-    this.deck = deck;
-    this.hand = hand;
-    this.win = win;
+export default function getRoomData(playerID) {
+    for (let room of rooms) {
+        if (room.player1Data === playerID ||room.player2Data === playerID) {
+            return room;
+        }
+    }
+    return null;
 }
 
-function fieldData(pickCard,deck) {
-    this.pickCard = pickCard;
-    this.deck = deck;
+export default function getPlayerData(playerID) {
+    for (let room of rooms) {
+        if (room.player1Data === playerID ) {
+            return room.player1Data;
+        }
+        if (room.player2Data === playerID) {
+            return room.player2Data;
+        }
+    }
+    return null;
 }
 
-function RoomData(player1Data,player2Data,fieldData) {
-    this.player1Data = player1Data;
-    this.player2Data = player2Data;
-    this.fieldData = fieldData;
+export default function playCard(playerID,CardData) {
+    playerID.battle = CardData;
 }
 
-export default function CreateRoom(player1ID,player2ID){
-    let player1 = new playerData(player1ID,0,0,0);
-    let player2 = new playerData(player2ID,0,0,0);
-    let field = new fieldData(0,0);
-    rooms.push(new RoomData(player1,player2,field));
-}
-
-export default function SetDeckData(playerData,DeckData){
-    playerData.deck = DeckData;
-}
-
-
-
-export default async function AnalyzeCardData(input) {
+export default async function analyzeCardData(input) {
     const openai = new OpenAIApi(configuration);
 
     dotenv.config();
