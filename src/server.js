@@ -1,33 +1,31 @@
 import http from 'http';
 import login from './login.js';
 import * as matching from './matching.js';
-
+import * as ingame from './ingame.js';
 const hostname = '127.0.0.1';
 const port = 9000;
 let resultMessage = "";
 
-let list = matching.matchingIdList;
-
 const server = http.createServer((req, res) => {
   console.log("req.method:", req.method);
-  let reveiveData = '';
+  let receiveData = '';
   if (req.method === "POST") {
     req.on('data', chunk => {
-      reveiveData += chunk;
+      receiveData += chunk;
     });
     req.on('end', () => {
-      if (reveiveData != "") {
-        const decodedString = decodeURIComponent(reveiveData);
-        reveiveData = JSON.parse(decodedString);
+      if (receiveData != "") {
+        const decodedString = decodeURIComponent(receiveData);
+        receiveData = JSON.parse(decodedString);
       }
       if (req.url === "/login") {
-        login(reveiveData.id, reveiveData.password, res);
+        login(receiveData.id, receiveData.password, res);
       }
       else if (req.url === "/matching") {
-        resultMessage = matching.Post(reveiveData, res);
+        resultMessage = matching.Post(receiveData, res);
       }
       else if (req.url === "/ingame") {
-        resultMessage = analyzeCardData(reveiveData);
+        resultMessage = ingame.post(receiveData,res);
       }
     })
   }

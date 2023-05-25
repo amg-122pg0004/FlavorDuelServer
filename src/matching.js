@@ -1,22 +1,28 @@
 import * as data from './data-struct.js'
+import * as ingame from './ingame.js'
+export { Post, getMatchingIDList, setMatchingIDList,getDeckDataHashes }
 
-class Pair {
-    constructor(id1, id2) {
-        this.player1 = new data.PlayerData(id1);
-        this.player2 = new data.PlayerData(id2);
-        this.player1comfirm = false;
-        this.player2comfirm = false;
-    }
-}
 let matchingIdList = [];//マッチング検索中のID配列
-let pairList = [];//ペアクラス配列
+function getMatchingIDList() {
+    return matchingIdList;
+}
+function setMatchingIDList(array) {
+    matchingIdList = array;
+}
 
-export { Post, Get ,matchingIdList ,pairList }
+let deckDataHashes = [];//IDとデッキデータの連想配列
+function getDeckDataHashes() {
+    return matchingIdList;
+}
 
 function Post(receiveData, res) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     switch (receiveData.type) {
         case 'StartMatching':
-            addMatchingList(receiveData.id, res);
+            addMatchingList(receiveData.id, receiveData.deck, res);
+            break;
+        case 'CheckMatching':
+            checkMatchingList(receiveData.id, res);
             break;
         case 'StopMatching':
             deleteMatchingList(receiveData.id, res);
@@ -25,80 +31,59 @@ function Post(receiveData, res) {
     res.end('post received:');
 }
 
-function Get(res) {
-    if (matchingIdList.length() >= 2) {
-        pairList.push(new Pair(matchingIdList.at(0), matchingIdList.at(1)));
-        matchingIdList.splice(0, 2);
+//自身のマッチング状況の確認
+function checkMatchingList(playerID, res) {
+    let response = "";
+    //マッチング更新
+    updateMatching();
+    //自身がマッチングされているか確認
+    const room = ingame.getRoomData(playerID);
+    if (room != null) {
+        //マッチングしていれば部屋情報を返す
+        response = {
+            message: 'MatchingSuccess',
+            room: room
+        };
+    } else {
+        response = {
+            message: 'FindingNow',
+        };
     }
-    let pairCheck = false;
-    let opponentData = null;
-    for (let pair of pairList) {
-        if (pair.player1.id === playerID) {
-            pair.player1comfirm = true;
-            pairCheck = true;
-        }
-        else if (pair.player2.id === playerID) {
-            pair.player2comfirm = true;
-            pairCheck = true;
-        }
-    }
-    pairList.filter(function (pair) {
-        return !(pair.player1comfirm && pair.player2comfirm)
-    });
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    const response = {
-        message: 'BeginMatching',
-        opponent: opponentData
-    };
-
     res.write(JSON.stringify(response));
 }
 
-function addMatchingList(playerID, res) {
+//自身のマッチング開始
+function addMatchingList(playerID, deck, res) {
+    //マッチングIDリストに自分のIDが無ければ追加
     if (!matchingIdList.includes(playerID)) {
-        let pairCheck = false;
-        for (let pair of pairList) {
-            if (pair.player1.id === playerID || pair.player2.id === playerID) {
-                pairCheck = true;
-            }
-        }
-        if (!pairCheck) {
-            matchingIdList.push(playerID);
+        matchingIdList.push(playerID);
+        if(deck!=null){
+            deckDataHashes[playerID] = deck;
         }
     }
-    if (matchingIdList.length >= 2) {
-        pairList.push(new Pair(matchingIdList.at(0), matchingIdList.at(1)));
-        matchingIdList.splice(0, 2);
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    const response = {
-        message: 'BeginMatching',
-    };
-    res.write(JSON.stringify(response));
+    checkMatchingList(playerID, res);
 }
 
+//自身のマッチング停止
 function deleteMatchingList(playerID, res) {
     matchingIdList.filter(function (matchingID) {
         return playerID != matchingID;
     });
 
-    let deletePair = null;
-    for (let pair of pairList) {
-        if (pair.player1.id === playerID) {
-            matchingIdList.add(pair.player2.id);
-            deletePair = pair;
-            break;
-        }
-        else if (pair.player2.id === playerID) {
-            matchingIdList.add(pair.player1.id);
-            deletePair = pair;
-            break;
-        }
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json' });
     const response = {
         message: 'StopMatching',
     };
     res.write(JSON.stringify(response));
+}
+
+//マッチングが可能であれば作成
+function updateMatching() {
+    while (matchingIdList.length >= 2) {
+        const player1ID = matchingIdList.at(0);
+        const player2ID = matchingIdList.at(1);
+        const deck1 = deckDataHashes[player1ID];
+        const deck2 = deckDataHashes[player2ID];
+        ingame.createRoom(player1ID, player2ID, deck1, deck2);
+        matchingIdList.splice(0, 2);
+    }
 }

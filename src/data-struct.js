@@ -1,3 +1,5 @@
+import * as judge2 from './judge.js'
+import Sequence from './sequence-enum.js'
 export { CardData, PlayerData, FieldData, RoomData }
 
 class CardData {
@@ -11,15 +13,13 @@ class CardData {
 }
 
 class PlayerData {
-    constructor(id) {
+    constructor(id, DeckData) {
         this.id = id;
-        this.deck = null;
-        this.hand = null;
-        this.battle = null;
-        this.win = 0;
-    }
-    setDeckData(DeckData) {
         this.deck = DeckData;
+        this.hand = [];
+        this.battle = new CardData("", -1, "");
+        this.oldBattle = new CardData("", -1, "");
+        this.win = 0;
     }
     setHandData(HandData) {
         this.hand = HandData;
@@ -27,7 +27,7 @@ class PlayerData {
     incrementWin() {
         this.win++;
     }
-    getWin(){
+    getWin() {
         return this.win;
     }
 }
@@ -44,5 +44,8 @@ class RoomData {
         this.player1Data = player1Data;
         this.player2Data = player2Data;
         this.fieldData = fieldData;
+        this.judge = judge2.judgeType.higherAttack;
+        this.state = Sequence.waitPlay;
+        this.messageLog = [];
     }
 }

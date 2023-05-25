@@ -7,12 +7,11 @@ const pool = mariadb.createPool({
     port: 3306,
     connectionLimit: 5,
   });
-  
-  let conn;
 
 const login = async(id,password,res)=>{
+  let conn;
     try{
-      let conn = await pool.getConnection();
+      conn = await pool.getConnection();
       const rows = await conn.query(`SELECT * FROM user_data WHERE id = "${id}" AND password = "${password}"`);
       
       if (rows.length === 0) {
