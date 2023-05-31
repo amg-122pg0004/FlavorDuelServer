@@ -1,5 +1,6 @@
 import http from 'http';
 import login from './login.js';
+import register from './register.js';
 import * as matching from './matching.js';
 import * as ingame from './ingame.js';
 const hostname = '127.0.0.1';
@@ -20,6 +21,9 @@ const server = http.createServer((req, res) => {
       }
       if (req.url === "/login") {
         login(receiveData.id, receiveData.password, res);
+      }
+      else if (req.url === "/register") {
+        register(receiveData.id, receiveData.password, res);
       }
       else if (req.url === "/matching") {
         resultMessage = matching.Post(receiveData, res);
