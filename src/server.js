@@ -1,12 +1,20 @@
+/**
+ * @fileoverview サーバープログラムのエントリーポイント
+ *               httpでPOST/GETを受け付けて各エンドポイントの処理を呼び出します
+ */
+
 import http from 'http';
 import login from './login.js';
 import register from './register.js';
-import * as matching from './matching.js';
-import * as ingame from './ingame.js';
+import { matchingPost } from './matching.js';
+import { ingamePost } from './ingame.js';
 const hostname = '127.0.0.1';
 const port = 9000;
 let resultMessage = "";
 
+/**
+ * httpサーバの作成
+ */
 const server = http.createServer((req, res) => {
   console.log("req.method:", req.method);
   let receiveData = '';
@@ -26,20 +34,20 @@ const server = http.createServer((req, res) => {
         register(receiveData.id, receiveData.password, res);
       }
       else if (req.url === "/matching") {
-        resultMessage = matching.Post(receiveData, res);
+        matchingPost(receiveData, res);
       }
       else if (req.url === "/ingame") {
-        resultMessage = ingame.post(receiveData,res);
+        ingamePost(receiveData, res);
       }
     })
   }
   else if (req.method === "GET") {
-    if (req.url === "/matching") {
-      resultMessage = matching.Get(res);
-    }
   }
 });
 
+/**
+ * httpの待ち受け
+ */
 server.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
 });

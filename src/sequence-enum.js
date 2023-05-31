@@ -1,3 +1,7 @@
+/**
+ * ゲームの進行状況を示す列挙型データ
+ * @type {int}
+ */
 const Sequence ={
     beginGame:1,
     startTurn:2,
