@@ -2,6 +2,7 @@
  * @fileoverview /registerエンドポイントの処理を記載するファイル
  */
 import mariadb from 'mariadb';
+import { CardData, PlayerData, FieldData, RoomData } from './data-struct.js'
 const pool = mariadb.createPool({
   host: 'localhost',
   user: 'root',
@@ -23,8 +24,9 @@ const register = async (id, password, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    await conn.query(
-      `INSERT INTO user_data(id,password) VALUES('${id}','${password}')`);
+    const defaultDeck = await conn.query(`SELECT deck FROM default_deck WHERE number = 0`);
+    const setdeck = defaultDeck[0].deck;
+    await conn.query(`INSERT INTO user_data(id,password,deck) VALUES('${id}','${password}','${setdeck}')`);
     const rows = await conn.query(`SELECT * FROM user_data WHERE id = "${id}" AND password = "${password}"`);
     if (rows.length === 0) {
       res.writeHead(401, { error: 'Invalid credentials' });

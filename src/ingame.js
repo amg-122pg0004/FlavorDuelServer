@@ -6,7 +6,7 @@ import { Configuration, OpenAIApi } from "openai";
 import dotenv from 'dotenv';
 import { CardData, PlayerData, FieldData, RoomData } from './data-struct.js'
 import sequence from './sequence-enum.js'
-import { judgeCards } from "./judge.js";
+import { judgeCards, judgeResult } from "./judge.js";
 export { ingamePost, createRoom, getRoomData }
 dotenv.config();
 const configuration = new Configuration({
@@ -32,17 +32,24 @@ function ingamePost(receiveData, res) {
         let playerData = getPlayerData(receiveData.id, room);
         switch (receiveData.type) {
             case 'PlayCard':
-                if (room.state == sequence.waitPlay) {
-                    playCard(room, playerData, receiveData);
-                }
-                responseRoomdata(room, res);
+                playCard(room, playerData, receiveData);
+                break;
+            case 'ConfirmJudge':
+                clearBattle(room, playerData);
                 break;
             case 'CheckRoom':
-                responseRoomdata(room, res);
                 break;
         }
+        responseRoomdata(room, res);
     }
     res.end('post received:');
+    if (room != null) {
+        if (room.state == sequence.finishGame &&
+            room.player1Data.judgeConfirm &&
+            room.player2Data.judgeConfirm) {
+            deleteRoom(room);
+        }
+    }
 }
 
 /**
@@ -52,6 +59,9 @@ function ingamePost(receiveData, res) {
  * @param {*} receiveData httpレスポンス
  */
 function playCard(room, playerData, receiveData) {
+    if (playerData.battle.name != "") {
+        return;
+    }
     playerData.battle = receiveData.play;
     playerData.hand = playerData.hand.filter(function (item) {
         return item.name != playerData.battle.name;
@@ -62,6 +72,31 @@ function playCard(room, playerData, receiveData) {
         room.state = sequence.waitAnalyze;
     }
 }
+
+/**
+ * プレイ後のカードをクリアする
+ * @param {RoomData} room 実行する部屋
+ * @param {PlayerData} playerData 実行するプレイヤー
+ */
+function clearBattle(room, playerData) {
+    playerData.judgeConfirm = true;
+
+    if (room.player1Data.win >= 3 || room.player2Data.win >= 3) {
+        room.state = sequence.finishGame;
+    }
+    else if (room.player1Data.judgeConfirm && room.player2Data.judgeConfirm) {
+        room.player1Data.battle = new CardData("", -1, "");
+        room.player2Data.battle = new CardData("", -1, "");
+        room.player1Data.judgeConfirm = false;
+        room.player2Data.judgeConfirm = false;
+
+        room.state = sequence.waitPlay;
+        drawCard(room.player1Data);
+        drawCard(room.player2Data);
+    }
+
+}
+
 
 /**
  * 部屋データをクライアントに返す
@@ -88,27 +123,22 @@ async function analyzeAndJudge(room) {
 }
 
 /**
- * ターン終了時の処理 場のカードの勝敗を決定後、ゲームを終了するか次のターンを始める
+ * 勝敗を決定して勝利数をカウントアップする
  * @param {RoomData} room 実行する部屋
  */
 async function turnEnd(room) {
     const result = judgeCards(room);
-    if (result) {
-        room.player2Data.win++;
-    } else {
-        room.player1Data.win++;
-    }
-    room.player1Data.oldBattle = room.player1Data.battle;
-    room.player2Data.oldBattle = room.player2Data.battle;
-    room.player1Data.battle = new CardData("", -1, "");
-    room.player2Data.battle = new CardData("", -1, "");
-
-    if (room.player1Data.win >= 3 || room.player2Data.win >= 3) {
-        room.state = sequence.finishGame;
-    } else {
-        room.state = sequence.waitPlay;
-        drawCard(room.player1Data);
-        drawCard(room.player2Data);
+    switch (result) {
+        case judgeResult.Draw:
+            room.player1Data.win++;
+            room.player2Data.win++;
+            break;
+        case judgeResult.player1Win:
+            room.player1Data.win++;
+            break;
+        case judgeResult.player2Win:
+            room.player2Data.win++;
+            break;
     }
 }
 
@@ -164,6 +194,16 @@ function getPlayerData(playerID, room) {
 }
 
 /**
+ * 部屋削除
+ * @param {RoomData} room 削除する部屋
+ */
+function deleteRoom(room) {
+    rooms = rooms.filter(function (item) {
+        return item != room;
+    });
+}
+
+/**
  * デッキのシャッフルを行う
  * @param {PlayerData} playerData 実行するプレイヤー
  */
@@ -204,7 +244,7 @@ async function analyzeCardData(room, battle) {
           カードの名前とその設定や世界観を示すテキストがあります。
   
           名前:${battle.name}
-          テキスト:${battle.text}
+          テキスト:${battle.flavortext}
           
           名前とテキストを参考にカードの"attack"と,"defense"を設定します。
           "attack"と,"defense"は0から10の間です。平均的な"attack"と,"defense"の値は5です。
@@ -212,9 +252,10 @@ async function analyzeCardData(room, battle) {
           それらが無い場合は低く設定します。
           "defense"はカードの名前とテキストの中に、大らかな気性、鎧を身に着ける、盾を持つ、固い鱗や殻に覆われている、防御的な能力を持つなどの要素を持つほど高く設定します。
           それらが無い場合は低く設定します。
-          そのカードの"atatck"と"defense"を設定した理由を"reason"として男性のくだけた口調で話す。
-          短く一言でまとめる。「あいつは」という時は代わりに「そいつは」と言う。
-          数字は話してはいけない。`,
+          "reason"はカードの強さの理由をユニークに2文でまとめる。
+          "reason"は${battle.name}は、から始める。
+          "reason"で数値は使いません。
+          "reason"内でattack、攻撃力、defence、防御力、という言葉は使用禁止です。`,
         temperature: 0.6,
         max_tokens: 1500,
     });

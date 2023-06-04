@@ -37,7 +37,7 @@ class PlayerData {
         this.deck = DeckData;
         this.hand = [];//手札
         this.battle = new CardData("", -1, "");//場に出ているカード
-        this.oldBattle = new CardData("", -1, "");//前に場に出ていたカード
+        this.judgeConfirm = false;
         this.win = 0;//勝利数
     }
 }

@@ -88,6 +88,9 @@ function deleteMatchingList(playerID, res) {
     matchingIdList.filter(function (matchingID) {
         return playerID != matchingID;
     });
+    deckDataHashes.filter(function (matchingID) {
+        return playerID != matchingID;
+    });
 
     const response = {
         message: 'StopMatching',
