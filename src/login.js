@@ -2,15 +2,23 @@
  * @fileoverview /loginエンドポイントの処理を記載するファイル
  */
 import mariadb from 'mariadb';
+import dotenv from 'dotenv';
+dotenv.config();
 const pool = mariadb.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '0000',
-  database: 'testdb',
-  port: 3306,
-  connectionLimit: 5,
-});
+  host: process.env.MARIADB_HOST,
+  user: process.env.MARIADB_USER,
+  password: process.env.MARIADB_PASSWORD,
+  database: process.env.MARIADB_DBNAME,
+  port: process.env.MARIADB_PORT,
+  connectionLimit: process.env.MARIADB_CONNECTION_LIMIT,
 
+});
+console.log(process.env.MARIADB_HOST);
+console.log(process.env.MARIADB_USER);
+console.log(process.env.MARIADB_PASSWORD);
+console.log(process.env.MARIADB_DBNAME);
+console.log(process.env.MARIADB_PORT);
+console.log(process.env.MARIADB_CONNECTION_LIMIT);
 /**
  * ログイン処理
  * ログインに成功すればプレイヤーデータ,失敗したらエラーコードをレスポンスとして返す

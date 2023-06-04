@@ -11,7 +11,6 @@ import { ingamePost } from './ingame.js';
 import setDeckData from './edit.js';
 const hostname = '127.0.0.1';
 const port = 9000;
-let resultMessage = "";
 
 /**
  * httpサーバの作成
