@@ -8,6 +8,7 @@ import login from './login.js';
 import register from './register.js';
 import { matchingPost } from './matching.js';
 import { ingamePost } from './ingame.js';
+import setDeckData from './edit.js';
 const hostname = '127.0.0.1';
 const port = 9000;
 let resultMessage = "";
@@ -38,6 +39,8 @@ const server = http.createServer((req, res) => {
       }
       else if (req.url === "/ingame") {
         ingamePost(receiveData, res);
+      } else if (req.url === "/edit") {
+        setDeckData(receiveData, res);
       }
     })
   }
