@@ -2,7 +2,7 @@
  * @fileoverview カードの勝敗判定処理を記載するファイル
  */
 
-export { judgeType, judgeCards }
+export { judgeType, judgeResult, judgeCards }
 
 /**
  * 判定の種類
@@ -17,6 +17,16 @@ const judgeType = {
   lowerTotal: 5,//合計値が低い
 }
 /**
+ * 判定の種類
+ * @enum {number}
+ */
+const judgeResult = {
+  player1Win: 0,
+  player2Win: 1,
+  Draw: 2,
+}
+
+/**
  * カードの勝敗判定を行う
  * @param {*} room この部屋内の場に出ているカード2枚を比較する
  * @returns player2が勝った場合trueを返す
@@ -26,18 +36,55 @@ function judgeCards(room) {
   const attack2 = room.player2Data.battle.attack;
   const defence1 = room.player1Data.battle.defence;
   const defence2 = room.player2Data.battle.defence;
+
   switch (room.judge) {
     case judgeType.higherAttack:
-      return (attack1 < attack2);
+      if (attack1 == attack2) {
+        return judgeResult.Draw;
+      } else if (attack1 > attack2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
     case judgeType.higherDefence:
-      return (defence1 < defence2);
+      if (defence1 == defence2) {
+        return judgeResult.Draw;
+      } else if (defence1 > defence2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
     case judgeType.higherTotal:
-      return (attack1 + defence1 < attack2 + defence2);
+      if (attack1 + defence1 == attack2 + defence2) {
+        return judgeResult.Draw;
+      } else if (attack1 + defence1 > attack2 + defence2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
     case judgeType.lowerAttack:
-      return (attack1 > attack2);
+      if (attack1 == attack2) {
+        return judgeResult.Draw;
+      } else if (attack1 < attack2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
     case judgeType.lowerDefence:
-      return (defence1 > defence2);
+      if (defence1 == defence2) {
+        return judgeResult.Draw;
+      } else if (defence1 < defence2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
     case judgeType.lowerTotal:
-      return (attack1 + defence1 > attack2 + defence2);
+      if (attack1 + defence1 == attack2 + defence2) {
+        return judgeResult.Draw;
+      } else if (attack1 + defence1 < attack2 + defence2) {
+        return judgeResult.player1Win;
+      } else {
+        return judgeResult.player2Win;
+      }
   }
 }
