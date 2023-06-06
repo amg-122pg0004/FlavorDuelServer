@@ -85,10 +85,10 @@ function addMatchingList(playerID, deck, res) {
  * @param {*} res httpレスポンス 
  */
 function deleteMatchingList(playerID, res) {
-    matchingIdList.filter(function (matchingID) {
+    matchingIdList = matchingIdList.filter(function (matchingID) {
         return playerID != matchingID;
     });
-    deckDataHashes.filter(function (matchingID) {
+    deckDataHashes = deckDataHashes.filter(function (matchingID) {
         return playerID != matchingID;
     });
 

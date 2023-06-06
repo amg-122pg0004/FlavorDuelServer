@@ -13,12 +13,6 @@ const pool = mariadb.createPool({
   connectionLimit: process.env.MARIADB_CONNECTION_LIMIT,
 
 });
-console.log(process.env.MARIADB_HOST);
-console.log(process.env.MARIADB_USER);
-console.log(process.env.MARIADB_PASSWORD);
-console.log(process.env.MARIADB_DBNAME);
-console.log(process.env.MARIADB_PORT);
-console.log(process.env.MARIADB_CONNECTION_LIMIT);
 /**
  * ログイン処理
  * ログインに成功すればプレイヤーデータ,失敗したらエラーコードをレスポンスとして返す

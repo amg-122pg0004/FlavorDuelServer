@@ -67,7 +67,9 @@ function playCard(room, playerData, receiveData) {
         return item.name != playerData.battle.name;
     });
     //二人が場にカードを出していたら勝敗判定
-    if (room.player1Data.battle.name != "" && room.player2Data.battle.name != "") {
+    if (room.player1Data.battle.name != "" &&
+        room.player2Data.battle.name != ""
+        && room.state != sequence.waitAnalyze) {
         analyzeAndJudge(room);
         room.state = sequence.waitAnalyze;
     }
@@ -117,9 +119,17 @@ function responseRoomdata(serverRoom, res) {
  * @param {RoomData} room 実行する部屋
  */
 async function analyzeAndJudge(room) {
-    await analyzeCardData(room, room.player1Data.battle);
-    await analyzeCardData(room, room.player2Data.battle);
-    await turnEnd(room);
+    if (room.player1Data.battle.attack == -1) {
+        await analyzeCardData(room, room.player1Data.battle);
+    }
+    if (room.player2Data.battle.attack == -1) {
+        await analyzeCardData(room, room.player2Data.battle);
+    }
+    if (room.player1Data.battle.attack != -1 && room.player2Data.battle.attack != -1) {
+        await turnEnd(room);
+    } else {
+        await analyzeAndJudge(room);
+    }
 }
 
 /**
@@ -140,6 +150,7 @@ async function turnEnd(room) {
             room.player2Data.win++;
             break;
     }
+    room.state = sequence.judge;
 }
 
 /**
@@ -248,14 +259,15 @@ async function analyzeCardData(room, battle) {
           
           名前とテキストを参考にカードの"attack"と,"defense"を設定します。
           "attack"と,"defense"は0から10の間です。平均的な"attack"と,"defense"の値は5です。
-          "atatck"はカードの名前とテキストの中に、強暴な気性、武器を持つ、鋭利な形状を持つ、攻撃的な能力を持つなどの要素を持つほど高く設定します。
-          それらが無い場合は低く設定します。
-          "defense"はカードの名前とテキストの中に、大らかな気性、鎧を身に着ける、盾を持つ、固い鱗や殻に覆われている、防御的な能力を持つなどの要素を持つほど高く設定します。
-          それらが無い場合は低く設定します。
+          "atatck"はカードの名前とテキストの中に、強暴な気性、武器を持つ、鋭利な形状を持つ、攻撃的な能力を持つなどの要素を持つほど高くなります。
+          優しい性格、武器を持たない、柔らかい材質、力が弱い、体が小さいなどの要素を持つほど低くなります。
+          "defense"はカードの名前とテキストの中に、大らかな気性、鎧を身に着ける、盾を持つ、固い鱗や殻に覆われている、防御的な能力を持つなどの要素を持つほど高くなります。
+          神経質な性格、服を着ていない、柔らかい材質、筋肉が少ない、体が小さいなどの要素を持つほど低くなります。
           "reason"はカードの強さの理由をユニークに2文でまとめる。
           "reason"は${battle.name}は、から始める。
           "reason"で数値は使いません。
-          "reason"内でattack、攻撃力、defence、防御力、という言葉は使用禁止です。`,
+          "reason"内でattack、攻撃力、defence、防御力、という言葉は使用禁止です。
+          "reason"ではテキストに書かれていない事柄も追加します。{`,
         temperature: 0.6,
         max_tokens: 1500,
     });
@@ -263,13 +275,12 @@ async function analyzeCardData(room, battle) {
     console.log(battle.text);
     console.log(completion.data.choices[0].text);
     try {
-        const parseData = JSON.parse(completion.data.choices[0].text);
+        const parseData = JSON.parse('{' + completion.data.choices[0].text);
         battle.attack = parseData.attack * 100;
         battle.defence = parseData.defense * 100;
         room.messageLog.push(parseData.reason);
     } catch (error) {
         console.log(error);
-        analyzeCardData(room, battle);
     }
 
 }
